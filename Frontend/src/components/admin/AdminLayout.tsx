@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -35,6 +35,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Tableau de Bord", path: "/dashboard" },
@@ -51,11 +53,23 @@ export function AdminLayout() {
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
 
   const handleCollapse = (value: boolean) => {
     setCollapsed(value);
     localStorage.setItem("sidebar-collapsed", String(value));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Déconnexion réussie");
+      navigate("/login");
+    } catch (error) {
+      toast.error("Erreur lors de la déconnexion");
+    }
   };
 
   const themeOptions = [
@@ -138,21 +152,21 @@ export function AdminLayout() {
                   <div className="relative">
                     <Avatar className="h-16 w-16">
                       <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" />
-                      <AvatarFallback>AD</AvatarFallback>
+                      <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || 'AD'}</AvatarFallback>
                     </Avatar>
                     <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                       <Camera className="h-3 w-3" />
                     </button>
                   </div>
                   <div className="flex-1 space-y-1">
-                    <p className="font-semibold">Utilisateur Admin</p>
+                    <p className="font-semibold">{user?.username || 'Admin'}</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="h-3 w-3" />
-                      <span>admin@sporthub.com</span>
+                      <span>{user?.email || 'admin@sporthub.com'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Shield className="h-3 w-3" />
-                      <span>Super Administrateur</span>
+                      <span>{user?.is_staff ? 'Administrateur' : 'Utilisateur'}</span>
                     </div>
                   </div>
                 </div>
@@ -215,13 +229,13 @@ export function AdminLayout() {
               </div>
             </DialogContent>
           </Dialog>
-          <Link
-            to="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive"
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive"
           >
             <LogOut className="h-5 w-5 flex-shrink-0" />
             {!collapsed && <span className="font-medium">Déconnexion</span>}
-          </Link>
+          </button>
         </div>
 
         {/* Collapse Toggle */}
@@ -263,11 +277,11 @@ export function AdminLayout() {
             <div className="flex items-center gap-3">
               <Avatar className="h-9 w-9">
                 <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" />
-                <AvatarFallback>AD</AvatarFallback>
+                <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || 'AD'}</AvatarFallback>
               </Avatar>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium">Utilisateur Admin</p>
-                <p className="text-xs text-muted-foreground">Super Administrateur</p>
+                <p className="text-sm font-medium">{user?.username || 'Admin'}</p>
+                <p className="text-xs text-muted-foreground">{user?.is_staff ? 'Administrateur' : 'Utilisateur'}</p>
               </div>
             </div>
           </div>

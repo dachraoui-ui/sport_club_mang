@@ -1,7 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -14,248 +12,313 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { mockChartData, mockDashboardStats } from "@/data/mockData";
-import { Button } from "@/components/ui/button";
-import { Calendar, TrendingUp, TrendingDown, Users, DollarSign, Activity } from "lucide-react";
+import { statsAPI, membersAPI, activitiesAPI, enrollmentsAPI, ActivityStats } from "@/lib/api";
+import { Users, DollarSign, Activity, TrendingUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+interface StatsData {
+  totalMembers: number;
+  totalActivities: number;
+  totalEnrollments: number;
+  totalRevenue: number;
+  activityStats: ActivityStats[];
+  membersPerActivity: Record<string, { nom: string; prenom: string }[]>;
+}
 
 const StatisticsPage = () => {
-  const [dateRange, setDateRange] = useState("6months");
+  const [data, setData] = useState<StatsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true);
+        const [activityStats, membersPerActivity, members, activities, enrollments] = await Promise.all([
+          statsAPI.getActivities(),
+          statsAPI.getMembersPerActivity(),
+          membersAPI.getAll(),
+          activitiesAPI.getAll(),
+          enrollmentsAPI.getAll(),
+        ]);
+
+        // Calculate total revenue (sum of tarif * inscriptions for each activity)
+        const totalRevenue = activityStats.reduce((sum, stat) => {
+          return sum + (stat.tarif_mensuel * stat.nb_inscriptions);
+        }, 0);
+
+        setData({
+          totalMembers: members.length,
+          totalActivities: activities.length,
+          totalEnrollments: enrollments.length,
+          totalRevenue,
+          activityStats,
+          membersPerActivity,
+        });
+      } catch (error) {
+        toast.error("Erreur lors du chargement des statistiques");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        Erreur lors du chargement des statistiques
+      </div>
+    );
+  }
 
   const kpiCards = [
     {
       title: "Revenus Totaux",
-      value: "€245 680",
-      change: 22.1,
+      value: `€${data.totalRevenue.toFixed(2)}`,
       icon: DollarSign,
-      gradient: "from-success to-primary",
+      gradient: "from-green-500 to-primary",
     },
     {
       title: "Membres Actifs",
-      value: "524",
-      change: 12.5,
+      value: data.totalMembers.toString(),
       icon: Users,
       gradient: "from-primary to-accent",
     },
     {
-      title: "Activités Réalisées",
-      value: "1 248",
-      change: 8.3,
+      title: "Activités",
+      value: data.totalActivities.toString(),
       icon: Activity,
       gradient: "from-accent to-secondary",
     },
     {
-      title: "Durée Moy. de Session",
-      value: "52 min",
-      change: -2.4,
-      icon: Calendar,
+      title: "Inscriptions",
+      value: data.totalEnrollments.toString(),
+      icon: TrendingUp,
       gradient: "from-secondary to-primary",
     },
   ];
 
-  const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))"];
+  const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(142, 76%, 36%)", "hsl(var(--secondary))", "#8884d8"];
+
+  // Prepare chart data
+  const barChartData = data.activityStats.map((stat) => ({
+    name: stat.nom_act.length > 12 ? stat.nom_act.substring(0, 12) + "..." : stat.nom_act,
+    inscriptions: stat.nb_inscriptions,
+    capacite: stat.capacite,
+  }));
+
+  const pieChartData = data.activityStats
+    .filter((stat) => stat.nb_inscriptions > 0)
+    .map((stat) => ({
+      name: stat.nom_act,
+      value: stat.nb_inscriptions,
+    }));
+
+  const revenueByActivity = data.activityStats.map((stat) => ({
+    name: stat.nom_act.length > 12 ? stat.nom_act.substring(0, 12) + "..." : stat.nom_act,
+    revenue: stat.tarif_mensuel * stat.nb_inscriptions,
+  }));
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Statistiques & Analytiques</h1>
-          <p className="text-muted-foreground mt-1">
-            Insights complètes sur les performances de votre club
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {["30days", "6months", "1year"].map((range) => (
-            <Button
-              key={range}
-              variant={dateRange === range ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDateRange(range)}
-              className={dateRange === range ? "gradient-primary" : ""}
-            >
-              {range === "30days" ? "30 Jours" : range === "6months" ? "6 Mois" : "1 An"}
-            </Button>
-          ))}
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Statistiques & Analytiques</h1>
+        <p className="text-muted-foreground mt-1">
+          Insights complets sur les performances de votre club
+        </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpiCards.map((kpi, index) => {
-          const isPositive = kpi.change >= 0;
-          return (
+        {kpiCards.map((kpi) => (
+          <div
+            key={kpi.title}
+            className="relative p-6 rounded-2xl bg-card border border-border/50 overflow-hidden hover-lift"
+          >
             <div
-              key={kpi.title}
-              className="relative p-6 rounded-2xl bg-card border border-border/50 overflow-hidden hover-lift"
-            >
-              <div
-                className={cn(
-                  "absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20",
-                  `bg-gradient-to-br ${kpi.gradient}`
-                )}
-              />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div
-                    className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
-                      kpi.gradient
-                    )}
-                  >
-                    <kpi.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <div
-                    className={cn(
-                      "flex items-center gap-1 text-sm font-medium",
-                      isPositive ? "text-success" : "text-destructive"
-                    )}
-                  >
-                    {isPositive ? (
-                      <TrendingUp className="h-4 w-4" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4" />
-                    )}
-                    <span>{Math.abs(kpi.change)}%</span>
-                  </div>
+              className={cn(
+                "absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20",
+                `bg-gradient-to-br ${kpi.gradient}`
+              )}
+            />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br",
+                    kpi.gradient
+                  )}
+                >
+                  <kpi.icon className="h-6 w-6 text-white" />
                 </div>
-                <p className="text-sm text-muted-foreground">{kpi.title}</p>
-                <p className="text-3xl font-bold mt-1">{kpi.value}</p>
               </div>
+              <p className="text-sm text-muted-foreground">{kpi.title}</p>
+              <p className="text-3xl font-bold mt-1">{kpi.value}</p>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Membership Trend */}
+        {/* Bar Chart - Inscriptions par Activité */}
         <div className="bg-card rounded-2xl border border-border/50 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold">Évolution des Adhésions</h3>
-              <p className="text-sm text-muted-foreground">Nombre de membres au fil du temps</p>
-            </div>
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold">Inscriptions vs Capacité</h3>
+            <p className="text-sm text-muted-foreground">Comparaison par activité</p>
           </div>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockChartData.membershipTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "12px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="members"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={3}
-                  dot={{ fill: "hsl(var(--primary))", r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {barChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="name"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "12px",
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="inscriptions" fill="hsl(var(--primary))" name="Inscriptions" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="capacite" fill="hsl(var(--muted-foreground))" name="Capacité" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Membership Distribution */}
+        {/* Pie Chart - Distribution */}
         <div className="bg-card rounded-2xl border border-border/50 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold">Répartition des Adhésions</h3>
-              <p className="text-sm text-muted-foreground">Par type d'adhésion</p>
-            </div>
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold">Répartition des Adhésions</h3>
+            <p className="text-sm text-muted-foreground">Par activité</p>
           </div>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mockChartData.membershipTypes}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {mockChartData.membershipTypes.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "12px",
-                  }}
-                />
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  formatter={(value) => (
-                    <span style={{ color: "hsl(var(--foreground))" }}>{value}</span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {pieChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "12px",
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Aucune inscription pour le moment
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Activity Popularity Full Width */}
+      {/* Revenue Chart */}
       <div className="bg-card rounded-2xl border border-border/50 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold">Popularité des Activités</h3>
-            <p className="text-sm text-muted-foreground">Total des inscriptions par activité</p>
-          </div>
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold">Revenus par Activité</h3>
+          <p className="text-sm text-muted-foreground">Revenus mensuels générés</p>
         </div>
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={mockChartData.activityPopularity}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="name"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "12px",
-                }}
-                cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
-              />
-              <Bar
-                dataKey="registrations"
-                fill="hsl(var(--accent))"
-                radius={[8, 8, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="h-[300px]">
+          {revenueByActivity.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueByActivity} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} width={100} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "12px",
+                  }}
+                  formatter={(value: number) => [`€${value.toFixed(2)}`, "Revenus"]}
+                />
+                <Bar dataKey="revenue" fill="hsl(142, 76%, 36%)" radius={[0, 4, 4, 0]} name="Revenus (€)" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              Aucune donnée de revenus
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Members per Activity */}
+      <div className="bg-card rounded-2xl border border-border/50 p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold">Membres par Activité</h3>
+          <p className="text-sm text-muted-foreground">Liste des membres inscrits à chaque activité</p>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(data.membersPerActivity).map(([activityName, members]) => (
+            <div key={activityName} className="p-4 rounded-xl bg-muted/50">
+              <h4 className="font-semibold mb-3 text-primary">{activityName}</h4>
+              {members.length > 0 ? (
+                <ul className="space-y-2">
+                  {members.map((member, idx) => (
+                    <li key={idx} className="text-sm text-muted-foreground">
+                      • {member.prenom} {member.nom}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Aucun membre inscrit</p>
+              )}
+            </div>
+          ))}
+          {Object.keys(data.membersPerActivity).length === 0 && (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              Aucune activité avec des membres inscrits
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -3,21 +3,34 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dumbbell, Eye, EyeOff, ArrowRight, Phone, Lock } from "lucide-react";
+import { Dumbbell, Eye, EyeOff, ArrowRight, User, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ phoneOrId: "", password: "" });
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    navigate("/dashboard");
+    setError("");
+    
+    try {
+      await login(formData.username, formData.password);
+      toast.success("Connexion réussie !");
+      navigate("/dashboard");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Échec de la connexion";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -88,19 +101,25 @@ const LoginPage = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
-              <Label htmlFor="phoneOrId" className="text-sm font-medium">
-                Numéro de Téléphone ou ID
+              <Label htmlFor="username" className="text-sm font-medium">
+                Nom d'utilisateur
               </Label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  id="phoneOrId"
+                  id="username"
                   type="text"
-                  placeholder="Entrez votre téléphone ou ID"
-                  value={formData.phoneOrId}
-                  onChange={(e) => setFormData({ ...formData, phoneOrId: e.target.value })}
+                  placeholder="Entrez votre nom d'utilisateur"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="h-14 pl-12 rounded-xl border-border/50 focus:border-primary focus:ring-primary transition-all"
+                  required
                 />
               </div>
             </div>
@@ -118,6 +137,7 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="h-14 pl-12 pr-12 rounded-xl border-border/50 focus:border-primary focus:ring-primary transition-all"
+                  required
                 />
                 <button
                   type="button"

@@ -1,45 +1,50 @@
+// Backend-aligned types
 export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  membershipType: "Premium" | "Standard" | "Basic";
-  status: "Active" | "Inactive" | "Pending";
-  joinDate: string;
-  avatar?: string;
+  id: number;
+  nom: string;
+  prenom: string;
+  age: number;
+  telephone: string;
 }
 
 export interface Activity {
-  id: string;
-  name: string;
-  description: string;
-  schedule: string;
-  instructor: string;
-  maxParticipants: number;
-  currentParticipants: number;
-  status: "Active" | "Upcoming" | "Full" | "Cancelled";
-  category: string;
-  image?: string;
+  id: number;
+  code_act: string;
+  nom_act: string;
+  tarif_mensuel: number;
+  capacite: number;
+  photo?: string;
 }
 
-export interface Registration {
-  id: string;
-  memberId: string;
-  memberName: string;
-  memberAvatar?: string;
-  activityId: string;
-  activityName: string;
-  registrationDate: string;
-  status: "Pending" | "Approved" | "Rejected";
+export interface Enrollment {
+  id: number;
+  membre_id: number;
+  membre_nom: string;
+  membre_prenom: string;
+  activite_id: number;
+  activite_nom: string;
+  date_inscription: string;
 }
 
 export interface DashboardStats {
   totalMembers: number;
-  activeActivities: number;
-  pendingRegistrations: number;
-  monthlyRevenue: number;
-  memberGrowth: number;
-  activityGrowth: number;
-  registrationGrowth: number;
-  revenueGrowth: number;
+  totalActivities: number;
+  totalEnrollments: number;
+  mostPopularActivity: {
+    nom: string;
+    inscriptions: number;
+  } | null;
+  leastPopularActivity: {
+    nom: string;
+    inscriptions: number;
+  } | null;
+}
+
+export interface ActivityStats {
+  code_act: string;
+  nom_act: string;
+  tarif_mensuel: number;
+  capacite: number;
+  nb_inscriptions: number;
+  places_disponibles: number;
 }

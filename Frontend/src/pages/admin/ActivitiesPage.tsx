@@ -1,197 +1,67 @@
-import { useState } from "react";
-import { mockActivities } from "@/data/mockData";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { activitiesAPI, statsAPI, ActivityStats } from "@/lib/api";
 import { Activity } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, Plus, Edit, Trash2, Grid3X3, List, Users, Clock } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Grid3X3, List, Users, Loader2, DollarSign, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 const ActivitiesPage = () => {
-  const [activities, setActivities] = useState<Activity[]>(mockActivities);
+  const navigate = useNavigate();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activityStats, setActivityStats] = useState<ActivityStats[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    schedule: "",
-    instructor: "",
-    maxParticipants: 20,
-    category: "",
-    status: "Active" as Activity["status"],
-  });
 
-  const filteredActivities = activities.filter(
-    (activity) =>
-      activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch activities
+  const fetchActivities = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [activitiesData, statsData] = await Promise.all([
+        activitiesAPI.getAll({ search: searchQuery || undefined }),
+        statsAPI.getActivities()
+      ]);
+      setActivities(activitiesData);
+      setActivityStats(statsData);
+    } catch (error) {
+      toast.error("Erreur lors du chargement des activités");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
 
-  const handleAdd = () => {
-    const newActivity: Activity = {
-      id: String(Date.now()),
-      ...formData,
-      currentParticipants: 0,
-      image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=300&fit=crop",
-    };
-    setActivities([newActivity, ...activities]);
-    setIsAddOpen(false);
-    resetForm();
-    toast.success("Activité créée avec succès !");
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  // Search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchActivities();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [fetchActivities]);
+
+  // Get stats for an activity
+  const getActivityStats = (codeAct: string): ActivityStats | undefined => {
+    return activityStats.find(s => s.code_act === codeAct);
   };
 
-  const handleEdit = () => {
-    if (!editingActivity) return;
-    setActivities(
-      activities.map((a) =>
-        a.id === editingActivity.id
-          ? { ...editingActivity, ...formData }
-          : a
-      )
-    );
-    setEditingActivity(null);
-    resetForm();
-    toast.success("Activité mise à jour avec succès !");
+  const handleDelete = async (id: number) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette activité ?")) return;
+    try {
+      await activitiesAPI.delete(id);
+      toast.success("Activité supprimée avec succès !");
+      fetchActivities();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression");
+    }
   };
-
-  const handleDelete = (id: string) => {
-    setActivities(activities.filter((a) => a.id !== id));
-    toast.success("Activité supprimée avec succès !");
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      schedule: "",
-      instructor: "",
-      maxParticipants: 20,
-      category: "",
-      status: "Active",
-    });
-  };
-
-  const openEdit = (activity: Activity) => {
-    setEditingActivity(activity);
-    setFormData({
-      name: activity.name,
-      description: activity.description,
-      schedule: activity.schedule,
-      instructor: activity.instructor,
-      maxParticipants: activity.maxParticipants,
-      category: activity.category,
-      status: activity.status,
-    });
-  };
-
-  const statusColors = {
-    Active: "bg-success/10 text-success border-success/20",
-    Upcoming: "bg-primary/10 text-primary border-primary/20",
-    Full: "bg-warning/10 text-warning border-warning/20",
-    Cancelled: "bg-destructive/10 text-destructive border-destructive/20",
-  };
-
-  const ActivityForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Nom de l'Activité</Label>
-        <Input
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Entrez le nom de l'activité"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Textarea
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Entrez la description de l'activité"
-          rows={3}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Horaire</Label>
-          <Input
-            value={formData.schedule}
-            onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
-            placeholder="ex: Lun, Mer - 18:00"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Instructeur</Label>
-          <Input
-            value={formData.instructor}
-            onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
-            placeholder="Nom de l'instructeur"
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Participants Max</Label>
-          <Input
-            type="number"
-            value={formData.maxParticipants}
-            onChange={(e) =>
-              setFormData({ ...formData, maxParticipants: parseInt(e.target.value) })
-            }
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Catégorie</Label>
-          <Input
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            placeholder="ex: Fitness, Bien-être"
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Statut</Label>
-        <Select
-          value={formData.status}
-          onValueChange={(value: Activity["status"]) =>
-            setFormData({ ...formData, status: value })
-          }
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Active">Actif</SelectItem>
-            <SelectItem value="Upcoming">À Venir</SelectItem>
-            <SelectItem value="Full">Complet</SelectItem>
-            <SelectItem value="Cancelled">Annulé</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button onClick={onSubmit} className="w-full gradient-primary">
-        {submitLabel}
-      </Button>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -200,23 +70,16 @@ const ActivitiesPage = () => {
         <div>
           <h1 className="text-3xl font-bold">Activités</h1>
           <p className="text-muted-foreground mt-1">
-            Gérez les activités et les horaires de votre club
+            Gérez les activités de votre club ({activities.length} activités)
           </p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="gradient-primary shadow-glow-sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter une Activité
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Créer une Nouvelle Activité</DialogTitle>
-            </DialogHeader>
-            <ActivityForm onSubmit={handleAdd} submitLabel="Créer l'Activité" />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={() => navigate("/dashboard/activities/add")}
+          className="gradient-primary shadow-glow-sm"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Ajouter une Activité
+        </Button>
       </div>
 
       {/* Filters */}
@@ -250,154 +113,177 @@ const ActivitiesPage = () => {
         </div>
       </div>
 
-      {/* Activities Grid/List */}
-      {viewMode === "grid" ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredActivities.map((activity, index) => (
-            <div
-              key={activity.id}
-              className="group bg-card rounded-2xl border border-border/50 overflow-hidden hover-lift"
+      {/* Loading state */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : activities.length === 0 ? (
+        <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
+          <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">
+            {searchQuery ? "Aucune activité trouvée" : "Aucune activité pour le moment"}
+          </p>
+          {!searchQuery && (
+            <Button 
+              onClick={() => navigate("/dashboard/activities/add")}
+              className="mt-4 gradient-primary"
             >
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={activity.image}
-                  alt={activity.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "absolute top-4 right-4",
-                    statusColors[activity.status]
-                  )}
-                >
-                  {activity.status}
-                </Badge>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-lg font-semibold text-white">{activity.name}</h3>
-                  <p className="text-sm text-white/80">{activity.category}</p>
-                </div>
-              </div>
-              <div className="p-4 space-y-4">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {activity.description}
-                </p>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{activity.schedule}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Users className="h-4 w-4" />
-                      <span>
-                        {activity.currentParticipants}/{activity.maxParticipants}
-                      </span>
+              <Plus className="h-4 w-4 mr-2" />
+              Créer votre première activité
+            </Button>
+          )}
+        </div>
+      ) : viewMode === "grid" ? (
+        /* Grid View */
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {activities.map((activity) => {
+            const stats = getActivityStats(activity.code_act);
+            const enrolledCount = stats?.nb_inscriptions || 0;
+            const fillRate = (enrolledCount / activity.capacite) * 100;
+
+            return (
+              <div
+                key={activity.id}
+                className="bg-card rounded-2xl border border-border/50 overflow-hidden group hover:shadow-lg transition-all duration-300"
+              >
+                {/* Activity Header */}
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                        <Calendar className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{activity.nom_act}</h3>
+                        <Badge variant="outline" className="text-xs">
+                          {activity.code_act}
+                        </Badge>
+                      </div>
                     </div>
-                    <span className="text-muted-foreground">
-                      {Math.round((activity.currentParticipants / activity.maxParticipants) * 100)}%
-                    </span>
-                  </div>
-                  <Progress
-                    value={(activity.currentParticipants / activity.maxParticipants) * 100}
-                    className="h-2"
-                  />
-                </div>
-                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                  <Dialog
-                    open={editingActivity?.id === activity.id}
-                    onOpenChange={(open) => !open && setEditingActivity(null)}
-                  >
-                    <DialogTrigger asChild>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(activity)}
-                        className="flex-1"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                        onClick={() => navigate(`/dashboard/activities/edit/${activity.id}`)}
                       >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Modifier
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-lg">
-                      <DialogHeader>
-                        <DialogTitle>Modifier l'Activité</DialogTitle>
-                      </DialogHeader>
-                      <ActivityForm onSubmit={handleEdit} submitLabel="Enregistrer les Modifications" />
-                    </DialogContent>
-                  </Dialog>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(activity.id)}
-                    className="text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => handleDelete(activity.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <DollarSign className="h-4 w-4" />
+                        <span className="text-sm">Tarif mensuel</span>
+                      </div>
+                      <span className="font-semibold text-primary">
+                        {activity.tarif_mensuel}€
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Participants
+                        </span>
+                        <span className="font-medium">
+                          {enrolledCount}/{activity.capacite}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={fillRate} 
+                        className={cn(
+                          "h-2",
+                          fillRate >= 90 ? "bg-destructive/20" : "bg-primary/20"
+                        )}
+                      />
+                      <p className="text-xs text-muted-foreground text-right">
+                        {fillRate >= 90 ? "Presque complet" : `${Math.round(fillRate)}% rempli`}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <div className="bg-card rounded-2xl border border-border/50 divide-y divide-border/50">
-          {filteredActivities.map((activity, index) => (
-            <div
-              key={activity.id}
-              className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
-            >
-              <img
-                src={activity.image}
-                alt={activity.name}
-                className="w-16 h-16 rounded-xl object-cover"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">{activity.name}</h3>
-                  <Badge variant="outline" className={cn(statusColors[activity.status])}>
-                    {activity.status}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">{activity.schedule}</p>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {activity.currentParticipants}/{activity.maxParticipants} participants
-              </div>
-              <div className="flex items-center gap-2">
-                <Dialog
-                  open={editingActivity?.id === activity.id}
-                  onOpenChange={(open) => !open && setEditingActivity(null)}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEdit(activity)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Modifier l'Activité</DialogTitle>
-                    </DialogHeader>
-                    <ActivityForm onSubmit={handleEdit} submitLabel="Enregistrer les Modifications" />
-                  </DialogContent>
-                </Dialog>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(activity.id)}
-                  className="text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
+        /* List View */
+        <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left p-4 font-medium">Activité</th>
+                <th className="text-left p-4 font-medium">Code</th>
+                <th className="text-left p-4 font-medium">Tarif</th>
+                <th className="text-left p-4 font-medium">Capacité</th>
+                <th className="text-right p-4 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activities.map((activity) => {
+                const stats = getActivityStats(activity.code_act);
+                const enrolledCount = stats?.nb_inscriptions || 0;
+
+                return (
+                  <tr key={activity.id} className="border-t border-border/50">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                          <Calendar className="h-5 w-5 text-primary" />
+                        </div>
+                        <span className="font-medium">{activity.nom_act}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <Badge variant="outline">{activity.code_act}</Badge>
+                    </td>
+                    <td className="p-4 font-semibold text-primary">
+                      {activity.tarif_mensuel}€/mois
+                    </td>
+                    <td className="p-4">
+                      <span className="text-muted-foreground">
+                        {enrolledCount}/{activity.capacite}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:bg-primary/10 hover:text-primary"
+                          onClick={() => navigate(`/dashboard/activities/edit/${activity.id}`)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => handleDelete(activity.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
