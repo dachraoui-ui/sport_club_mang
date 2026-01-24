@@ -1,22 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { activitiesAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Calendar, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, Save, Upload, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 const EditActivityPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [existingPhoto, setExistingPhoto] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     code_act: "",
     nom_act: "",
-    tarif_mensuel: 0,
-    capacite: 20,
+    tarif_mensuel: "",
+    capacite: "",
   });
 
   useEffect(() => {
@@ -27,9 +33,12 @@ const EditActivityPage = () => {
         setFormData({
           code_act: activity.code_act,
           nom_act: activity.nom_act,
-          tarif_mensuel: parseFloat(activity.tarif_mensuel.toString()),
-          capacite: activity.capacite,
+          tarif_mensuel: activity.tarif_mensuel.toString(),
+          capacite: activity.capacite.toString(),
         });
+        if (activity.photo) {
+          setExistingPhoto(activity.photo.startsWith('http') ? activity.photo : `${API_BASE_URL}${activity.photo}`);
+        }
       } catch (error) {
         toast.error("Erreur lors du chargement de l'activité");
         navigate("/dashboard/activities");
@@ -41,13 +50,45 @@ const EditActivityPage = () => {
     fetchActivity();
   }, [id, navigate]);
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("La photo ne doit pas dépasser 5 Mo");
+        return;
+      }
+      setPhotoFile(file);
+      setExistingPhoto(null);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setExistingPhoto(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
 
     try {
       setIsSubmitting(true);
-      await activitiesAPI.update(parseInt(id), formData);
+      const submitData = {
+        code_act: formData.code_act,
+        nom_act: formData.nom_act,
+        tarif_mensuel: parseFloat(formData.tarif_mensuel) || 0,
+        capacite: parseInt(formData.capacite) || 1,
+      };
+      await activitiesAPI.update(parseInt(id), submitData, photoFile || undefined);
       toast.success("Activité mise à jour avec succès !");
       navigate("/dashboard/activities");
     } catch (error) {
@@ -64,6 +105,8 @@ const EditActivityPage = () => {
       </div>
     );
   }
+
+  const displayPhoto = photoPreview || existingPhoto;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -98,6 +141,58 @@ const EditActivityPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Photo Upload */}
+          <div className="space-y-3">
+            <Label>Photo de l'activité</Label>
+            <div className="flex items-start gap-4">
+              {displayPhoto ? (
+                <div className="relative group">
+                  <img
+                    src={displayPhoto}
+                    alt="Aperçu"
+                    className="w-32 h-32 object-cover rounded-xl border border-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-32 h-32 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                >
+                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Ajouter</span>
+                </div>
+              )}
+              <div className="flex-1 space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {displayPhoto ? "Changer la photo" : "Télécharger une photo"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Formats acceptés: JPG, PNG, GIF. Max 5 Mo.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="code_act">Code Activité</Label>
@@ -135,12 +230,13 @@ const EditActivityPage = () => {
                 min={0}
                 step={0.01}
                 value={formData.tarif_mensuel}
-                onChange={(e) => setFormData({ ...formData, tarif_mensuel: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, tarif_mensuel: e.target.value })}
+                placeholder="0"
                 className="h-12"
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Prix mensuel en euros
+                Prix mensuel en Dinar Tunisien
               </p>
             </div>
             <div className="space-y-2">
@@ -150,7 +246,8 @@ const EditActivityPage = () => {
                 type="number"
                 min={1}
                 value={formData.capacite}
-                onChange={(e) => setFormData({ ...formData, capacite: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setFormData({ ...formData, capacite: e.target.value })}
+                placeholder="1"
                 className="h-12"
                 required
               />

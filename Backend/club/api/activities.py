@@ -1,6 +1,7 @@
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db import IntegrityError
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from club.models import Activity
@@ -26,13 +27,27 @@ def activities(request):
         elif sort == "-capacite":
             queryset = queryset.order_by("-capacite")
 
-        return JsonResponse(list(queryset.values()), safe=False)
+        # Return with proper photo URLs
+        activities_list = []
+        for activity in queryset:
+            activities_list.append({
+                "id": activity.id,
+                "code_act": activity.code_act,
+                "nom_act": activity.nom_act,
+                "tarif_mensuel": float(activity.tarif_mensuel),
+                "capacite": activity.capacite,
+                "photo": activity.photo.url if activity.photo else None
+            })
+        return JsonResponse(activities_list, safe=False)
 
     if request.method == "POST":
         # Handle both JSON and form data (for file uploads)
         if request.content_type and 'application/json' in request.content_type:
             try:
                 data = json.loads(request.body)
+                # Check if code already exists
+                if Activity.objects.filter(code_act=data["code_act"]).exists():
+                    return JsonResponse({"error": f"Le code activité '{data['code_act']}' existe déjà"}, status=400)
                 activity = Activity.objects.create(
                     code_act=data["code_act"],
                     nom_act=data["nom_act"],
@@ -42,16 +57,25 @@ def activities(request):
                 return JsonResponse({"id": activity.id, "success": True})
             except json.JSONDecodeError:
                 return JsonResponse({"error": "Invalid JSON"}, status=400)
+            except IntegrityError:
+                return JsonResponse({"error": f"Le code activité existe déjà"}, status=400)
         else:
             # Form data with file upload support
-            activity = Activity.objects.create(
-                code_act=request.POST["code_act"],
-                nom_act=request.POST["nom_act"],
-                tarif_mensuel=request.POST["tarif_mensuel"],
-                capacite=request.POST["capacite"],
-                photo=request.FILES.get("photo")
-            )
-            return JsonResponse({"id": activity.id, "success": True})
+            try:
+                code_act = request.POST["code_act"]
+                # Check if code already exists
+                if Activity.objects.filter(code_act=code_act).exists():
+                    return JsonResponse({"error": f"Le code activité '{code_act}' existe déjà"}, status=400)
+                activity = Activity.objects.create(
+                    code_act=code_act,
+                    nom_act=request.POST["nom_act"],
+                    tarif_mensuel=request.POST["tarif_mensuel"],
+                    capacite=request.POST["capacite"],
+                    photo=request.FILES.get("photo")
+                )
+                return JsonResponse({"id": activity.id, "success": True})
+            except IntegrityError:
+                return JsonResponse({"error": f"Le code activité existe déjà"}, status=400)
 
 
 @csrf_exempt

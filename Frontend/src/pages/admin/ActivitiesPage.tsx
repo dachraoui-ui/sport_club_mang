@@ -5,7 +5,9 @@ import { Activity } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Edit, Trash2, Grid3X3, List, Users, Loader2, DollarSign, Calendar } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Grid3X3, List, Users, Loader2, DollarSign, Calendar, ImageIcon } from "lucide-react";
+
+const API_BASE_URL = 'http://127.0.0.1:8000';
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -141,43 +143,60 @@ const ActivitiesPage = () => {
             const stats = getActivityStats(activity.code_act);
             const enrolledCount = stats?.nb_inscriptions || 0;
             const fillRate = (enrolledCount / activity.capacite) * 100;
+            const photoUrl = activity.photo 
+              ? (activity.photo.startsWith('http') ? activity.photo : `${API_BASE_URL}${activity.photo}`)
+              : null;
 
             return (
               <div
                 key={activity.id}
                 className="bg-card rounded-2xl border border-border/50 overflow-hidden group hover:shadow-lg transition-all duration-300"
               >
+                {/* Activity Photo */}
+                <div className="relative h-40 bg-muted overflow-hidden">
+                  {photoUrl ? (
+                    <img
+                      src={photoUrl}
+                      alt={activity.nom_act}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        console.error('Image load error:', photoUrl);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                      <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  {/* Overlay actions - Always visible with good contrast */}
+                  <div className="absolute top-3 right-3 flex items-center gap-2">
+                    <Button
+                      size="icon"
+                      className="h-9 w-9 bg-white/90 text-gray-700 shadow-md hover:bg-primary hover:text-white transition-colors"
+                      onClick={() => navigate(`/dashboard/activities/edit/${activity.id}`)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      className="h-9 w-9 bg-white/90 text-gray-700 shadow-md hover:bg-destructive hover:text-white transition-colors"
+                      onClick={() => handleDelete(activity.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {/* Badge */}
+                  <Badge className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm text-foreground shadow-sm">
+                    {activity.code_act}
+                  </Badge>
+                </div>
+
                 {/* Activity Header */}
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                        <Calendar className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">{activity.nom_act}</h3>
-                        <Badge variant="outline" className="text-xs">
-                          {activity.code_act}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                        onClick={() => navigate(`/dashboard/activities/edit/${activity.id}`)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => handleDelete(activity.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div>
+                      <h3 className="font-semibold text-lg">{activity.nom_act}</h3>
                     </div>
                   </div>
 
@@ -239,12 +258,20 @@ const ActivitiesPage = () => {
                 const enrolledCount = stats?.nb_inscriptions || 0;
 
                 return (
-                  <tr key={activity.id} className="border-t border-border/50">
+                  <tr key={activity.id} className="border-t border-border/50 hover:bg-muted/30 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                          <Calendar className="h-5 w-5 text-primary" />
-                        </div>
+                        {activity.photo ? (
+                          <img
+                            src={activity.photo.startsWith('http') ? activity.photo : `${API_BASE_URL}${activity.photo}`}
+                            alt={activity.nom_act}
+                            className="w-10 h-10 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
+                          </div>
+                        )}
                         <span className="font-medium">{activity.nom_act}</span>
                       </div>
                     </td>

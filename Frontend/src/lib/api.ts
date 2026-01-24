@@ -124,6 +124,50 @@ async function apiRequest<T>(
   return response.json();
 }
 
+// API Helper for FormData (file uploads) - doesn't set Content-Type, lets browser set it with boundary
+async function apiRequestFormData<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const accessToken = getAccessToken();
+  
+  const headers: HeadersInit = {
+    ...options.headers,
+  };
+  
+  if (accessToken) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  // If token expired, try to refresh
+  if (response.status === 401 && getRefreshToken()) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${getAccessToken()}`;
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } else {
+      clearTokens();
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(error.error || 'Request failed');
+  }
+
+  return response.json();
+}
+
 async function refreshAccessToken(): Promise<boolean> {
   try {
     const refreshToken = getRefreshToken();
@@ -223,17 +267,47 @@ export const activitiesAPI = {
   
   getById: (id: number) => apiRequest<Activity>(`/activities/${id}/`),
   
-  create: (data: Omit<Activity, 'id'>) =>
-    apiRequest<{ id: number; success: boolean }>('/activities/', {
+  create: (data: Omit<Activity, 'id' | 'photo'>, photo?: File) => {
+    if (photo) {
+      // Use FormData for file upload
+      const formData = new FormData();
+      formData.append('code_act', data.code_act);
+      formData.append('nom_act', data.nom_act);
+      formData.append('tarif_mensuel', String(data.tarif_mensuel));
+      formData.append('capacite', String(data.capacite));
+      formData.append('photo', photo);
+      
+      return apiRequestFormData<{ id: number; success: boolean }>('/activities/', {
+        method: 'POST',
+        body: formData,
+      });
+    }
+    return apiRequest<{ id: number; success: boolean }>('/activities/', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    });
+  },
   
-  update: (id: number, data: Partial<Activity>) =>
-    apiRequest<{ success: boolean }>(`/activities/${id}/`, {
+  update: (id: number, data: Partial<Omit<Activity, 'photo'>>, photo?: File) => {
+    if (photo) {
+      // Use FormData for file upload
+      const formData = new FormData();
+      if (data.code_act) formData.append('code_act', data.code_act);
+      if (data.nom_act) formData.append('nom_act', data.nom_act);
+      if (data.tarif_mensuel !== undefined) formData.append('tarif_mensuel', String(data.tarif_mensuel));
+      if (data.capacite !== undefined) formData.append('capacite', String(data.capacite));
+      formData.append('photo', photo);
+      
+      return apiRequestFormData<{ success: boolean }>(`/activities/${id}/`, {
+        method: 'PUT',
+        body: formData,
+      });
+    }
+    return apiRequest<{ success: boolean }>(`/activities/${id}/`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
+    });
+  },
   
   delete: (id: number) =>
     apiRequest<{ success: boolean }>(`/activities/${id}/`, {

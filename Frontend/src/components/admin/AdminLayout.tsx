@@ -56,6 +56,7 @@ export function AdminLayout() {
     return saved === "true";
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTooltipOpen, setSettingsTooltipOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
@@ -145,8 +146,15 @@ export function AdminLayout() {
 
         {/* Bottom Section */}
         <div className="p-3 border-t border-sidebar-border space-y-2 mt-auto overflow-hidden">
-          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <Tooltip delayDuration={0}>
+          <Dialog open={settingsOpen} onOpenChange={(open) => {
+            setSettingsOpen(open);
+            if (open) setSettingsTooltipOpen(false);
+          }}>
+            <Tooltip 
+              delayDuration={0} 
+              open={settingsTooltipOpen && collapsed && !settingsOpen}
+              onOpenChange={setSettingsTooltipOpen}
+            >
               <TooltipTrigger asChild>
                 <DialogTrigger asChild>
                   <button
@@ -160,11 +168,9 @@ export function AdminLayout() {
                   </button>
                 </DialogTrigger>
               </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right" className="font-medium">
-                  Paramètres
-                </TooltipContent>
-              )}
+              <TooltipContent side="right" className="font-medium">
+                Paramètres
+              </TooltipContent>
             </Tooltip>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
