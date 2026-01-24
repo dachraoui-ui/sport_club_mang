@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { PageTransition } from "./components/PageTransition";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LandingPage from "./pages/LandingPage";
@@ -46,32 +45,30 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <PageTransition key={location.pathname}>
-      <Routes location={location}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<DashboardPage />} />
-          <Route path="members" element={<MembersPage />} />
-          <Route path="members/add" element={<AddMemberPage />} />
-          <Route path="members/edit/:id" element={<EditMemberPage />} />
-          <Route path="activities" element={<ActivitiesPage />} />
-          <Route path="activities/add" element={<AddActivityPage />} />
-          <Route path="activities/edit/:id" element={<EditActivityPage />} />
-          <Route path="registrations" element={<RegistrationsPage />} />
-          <Route path="registrations/add" element={<AddEnrollmentPage />} />
-          <Route path="statistics" element={<StatisticsPage />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </PageTransition>
+    <Routes location={location}>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="members" element={<MembersPage />} />
+        <Route path="members/add" element={<AddMemberPage />} />
+        <Route path="members/edit/:id" element={<EditMemberPage />} />
+        <Route path="activities" element={<ActivitiesPage />} />
+        <Route path="activities/add" element={<AddActivityPage />} />
+        <Route path="activities/edit/:id" element={<EditActivityPage />} />
+        <Route path="registrations" element={<RegistrationsPage />} />
+        <Route path="registrations/add" element={<AddEnrollmentPage />} />
+        <Route path="statistics" element={<StatisticsPage />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 

@@ -12,7 +12,6 @@ import {
   LogOut,
   Bell,
   Settings,
-  Search,
   Sun,
   Moon,
   Monitor,
@@ -34,6 +33,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -88,27 +92,27 @@ export function AdminLayout() {
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border overflow-hidden">
           <Link to="/dashboard" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm flex-shrink-0">
               <Dumbbell className="h-5 w-5 text-white" />
             </div>
-            {!collapsed && (
-              <span className="text-xl font-bold">SportHub</span>
-            )}
+            <span className={cn(
+              "text-xl font-bold whitespace-nowrap transition-all duration-300",
+              collapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
+            )}>SportHub</span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto">
+        <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto overflow-x-hidden">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
-            return (
+            const linkContent = (
               <Link
-                key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl group",
+                  "flex items-center gap-3 px-4 py-3 rounded-xl group overflow-hidden",
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow-sm"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -117,25 +121,51 @@ export function AdminLayout() {
                 <item.icon
                   className="h-5 w-5 flex-shrink-0"
                 />
-                {!collapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
+                <span className={cn(
+                  "font-medium whitespace-nowrap transition-all duration-300",
+                  collapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
+                )}>{item.label}</span>
               </Link>
+            );
+
+            return (
+              <Tooltip key={item.path} delayDuration={0}>
+                <TooltipTrigger asChild>
+                  {linkContent}
+                </TooltipTrigger>
+                {collapsed && (
+                  <TooltipContent side="right" className="font-medium">
+                    {item.label}
+                  </TooltipContent>
+                )}
+              </Tooltip>
             );
           })}
         </nav>
 
         {/* Bottom Section */}
-        <div className="p-3 border-t border-sidebar-border space-y-2 mt-auto">
+        <div className="p-3 border-t border-sidebar-border space-y-2 mt-auto overflow-hidden">
           <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <DialogTrigger asChild>
-              <button
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              >
-                <Settings className="h-5 w-5 flex-shrink-0" />
-                {!collapsed && <span className="font-medium">Paramètres</span>}
-              </button>
-            </DialogTrigger>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild>
+                  <button
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground overflow-hidden"
+                  >
+                    <Settings className="h-5 w-5 flex-shrink-0" />
+                    <span className={cn(
+                      "font-medium whitespace-nowrap transition-all duration-300",
+                      collapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
+                    )}>Paramètres</span>
+                  </button>
+                </DialogTrigger>
+              </TooltipTrigger>
+              {collapsed && (
+                <TooltipContent side="right" className="font-medium">
+                  Paramètres
+                </TooltipContent>
+              )}
+            </Tooltip>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle className="text-xl">Paramètres</DialogTitle>
@@ -229,13 +259,25 @@ export function AdminLayout() {
               </div>
             </DialogContent>
           </Dialog>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive"
-          >
-            <LogOut className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && <span className="font-medium">Déconnexion</span>}
-          </button>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive overflow-hidden"
+              >
+                <LogOut className="h-5 w-5 flex-shrink-0" />
+                <span className={cn(
+                  "font-medium whitespace-nowrap transition-all duration-300",
+                  collapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
+                )}>Déconnexion</span>
+              </button>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right" className="font-medium">
+                Déconnexion
+              </TooltipContent>
+            )}
+          </Tooltip>
         </div>
 
         {/* Collapse Toggle */}
@@ -260,25 +302,40 @@ export function AdminLayout() {
       >
         {/* Header */}
         <header className="h-16 bg-card/95 backdrop-blur-sm border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
-          <div className="relative w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher membres, activités..."
-              className="pl-10 h-10 bg-muted/50 border-0 focus-visible:ring-1"
-            />
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-xl animate-pulse" />
+              <div className="relative flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 border border-primary/20">
+                <span className="text-2xl animate-bounce">👋</span>
+                <div className="flex flex-col">
+                  <span className="text-xs text-muted-foreground">Bienvenue,</span>
+                  <span className="font-semibold bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
+                    {user?.username || 'Admin'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Système opérationnel</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive animate-ping" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive" />
             </Button>
             <div className="h-8 w-px bg-border" />
             <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" />
-                <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || 'AD'}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-9 w-9 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
+                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" />
+                  <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || 'AD'}</AvatarFallback>
+                </Avatar>
+                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+              </div>
               <div className="hidden sm:block">
                 <p className="text-sm font-medium">{user?.username || 'Admin'}</p>
                 <p className="text-xs text-muted-foreground">{user?.is_staff ? 'Administrateur' : 'Utilisateur'}</p>

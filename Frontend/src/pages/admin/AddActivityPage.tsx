@@ -95,7 +95,7 @@ const AddActivityPage = () => {
 
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="tarif_mensuel">Tarif Mensuel (€)</Label>
+              <Label htmlFor="tarif_mensuel">Tarif Mensuel (DT)</Label>
               <Input
                 id="tarif_mensuel"
                 type="number"

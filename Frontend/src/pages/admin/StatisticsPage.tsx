@@ -84,7 +84,7 @@ const StatisticsPage = () => {
   const kpiCards = [
     {
       title: "Revenus Totaux",
-      value: `€${data.totalRevenue.toFixed(2)}`,
+      value: `${data.totalRevenue.toFixed(2)} DT`,
       icon: DollarSign,
       gradient: "from-green-500 to-primary",
     },
@@ -278,9 +278,9 @@ const StatisticsPage = () => {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "12px",
                   }}
-                  formatter={(value: number) => [`€${value.toFixed(2)}`, "Revenus"]}
+                  formatter={(value: number) => [`${value.toFixed(2)} DT`, "Revenus"]}
                 />
-                <Bar dataKey="revenue" fill="hsl(142, 76%, 36%)" radius={[0, 4, 4, 0]} name="Revenus (€)" />
+                <Bar dataKey="revenue" fill="hsl(142, 76%, 36%)" radius={[0, 4, 4, 0]} name="Revenus (DT)" />
               </BarChart>
             </ResponsiveContainer>
           ) : (

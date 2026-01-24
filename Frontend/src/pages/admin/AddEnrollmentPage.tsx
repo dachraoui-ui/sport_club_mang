@@ -155,7 +155,7 @@ const AddEnrollmentPage = () => {
               <SelectContent>
                 {activities.map((activity) => (
                   <SelectItem key={activity.id} value={activity.id.toString()}>
-                    {activity.nom_act} ({activity.code_act}) - {activity.tarif_mensuel}€/mois
+                    {activity.nom_act} ({activity.code_act}) - {activity.tarif_mensuel} DT/mois
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -192,7 +192,7 @@ const AddEnrollmentPage = () => {
                     </div>
                     <div>
                       <p className="font-medium">{selectedActivity.nom_act}</p>
-                      <p className="text-xs text-muted-foreground">{selectedActivity.tarif_mensuel}€/mois</p>
+                      <p className="text-xs text-muted-foreground">{selectedActivity.tarif_mensuel} DT/mois</p>
                     </div>
                   </div>
                 )}

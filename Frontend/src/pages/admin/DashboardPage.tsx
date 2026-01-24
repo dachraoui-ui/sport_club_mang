@@ -253,7 +253,7 @@ const DashboardPage = () => {
                       {stat.places_disponibles}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-right font-semibold">{stat.tarif_mensuel}€</td>
+                  <td className="py-3 px-4 text-right font-semibold">{stat.tarif_mensuel} DT</td>
                 </tr>
               ))}
             </tbody>

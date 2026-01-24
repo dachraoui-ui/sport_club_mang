@@ -189,7 +189,7 @@ const ActivitiesPage = () => {
                         <span className="text-sm">Tarif mensuel</span>
                       </div>
                       <span className="font-semibold text-primary">
-                        {activity.tarif_mensuel}€
+                        {activity.tarif_mensuel} DT
                       </span>
                     </div>
 
@@ -252,7 +252,7 @@ const ActivitiesPage = () => {
                       <Badge variant="outline">{activity.code_act}</Badge>
                     </td>
                     <td className="p-4 font-semibold text-primary">
-                      {activity.tarif_mensuel}€/mois
+                      {activity.tarif_mensuel} DT/mois
                     </td>
                     <td className="p-4">
                       <span className="text-muted-foreground">
