@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -20,6 +20,8 @@ import {
   Mail,
   Shield,
   Camera,
+  Palette,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,14 @@ const navItems = [
   { icon: TrendingUp, label: "Statistiques", path: "/dashboard/statistics" },
 ];
 
+const colorOptions = [
+  { label: "Bleu", value: "217 91% 60%", class: "bg-blue-500" },
+  { label: "Vert", value: "142 76% 36%", class: "bg-green-600" },
+  { label: "Violet", value: "263 70% 58%", class: "bg-violet-600" },
+  { label: "Orange", value: "24 95% 53%", class: "bg-orange-500" },
+  { label: "Rose", value: "346 87% 60%", class: "bg-pink-500" },
+];
+
 export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -59,6 +69,28 @@ export function AdminLayout() {
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTooltipOpen, setSettingsTooltipOpen] = useState(false);
+
+  // Custom Settings States
+  const [displayName, setDisplayName] = useState(() => {
+    return localStorage.getItem("admin-name") || "Utilisateur Admin";
+  });
+  const [selectedColor, setSelectedColor] = useState(() => {
+    return localStorage.getItem("admin-color") || "217 91% 60%";
+  });
+
+  // Apply color and persist settings
+  useEffect(() => {
+    localStorage.setItem("admin-name", displayName);
+  }, [displayName]);
+
+  useEffect(() => {
+    localStorage.setItem("admin-color", selectedColor);
+    document.documentElement.style.setProperty("--primary", selectedColor);
+    document.documentElement.style.setProperty("--ring", selectedColor);
+    document.documentElement.style.setProperty("--sidebar-primary", selectedColor);
+    document.documentElement.style.setProperty("--sidebar-ring", selectedColor);
+  }, [selectedColor]);
+
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
@@ -77,6 +109,10 @@ export function AdminLayout() {
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
     }
+  };
+
+  const handleColorChange = (colorValue: string) => {
+    setSelectedColor(colorValue);
   };
 
   const themeOptions = [
@@ -132,7 +168,7 @@ export function AdminLayout() {
             );
 
             return (
-              <Tooltip key={item.path} delayDuration={0}>
+              <Tooltip key={item.path} delayDuration={200}>
                 <TooltipTrigger asChild>
                   {linkContent}
                 </TooltipTrigger>
@@ -152,8 +188,8 @@ export function AdminLayout() {
             setSettingsOpen(open);
             if (open) setSettingsTooltipOpen(false);
           }}>
-            <Tooltip 
-              delayDuration={0} 
+            <Tooltip
+
               open={settingsTooltipOpen && collapsed && !settingsOpen}
               onOpenChange={setSettingsTooltipOpen}
             >
@@ -174,30 +210,30 @@ export function AdminLayout() {
                 Paramètres
               </TooltipContent>
             </Tooltip>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-xl">Paramètres</DialogTitle>
               </DialogHeader>
-              
+
               {/* Profile Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <User className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold">Profil Administrateur</h3>
                 </div>
-                
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 transition-all duration-300">
                   <div className="relative">
-                    <Avatar className="h-16 w-16">
+                    <Avatar className="h-16 w-16 border-2 border-background shadow-sm">
                       <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" />
-                      <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || 'AD'}</AvatarFallback>
+                      <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
                       <Camera className="h-3 w-3" />
                     </button>
                   </div>
                   <div className="flex-1 space-y-1">
-                    <p className="font-semibold">{user?.username || 'Admin'}</p>
+                    <p className="font-semibold text-lg">{displayName}</p>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="h-3 w-3" />
                       <span>{user?.email || 'admin@sporthub.com'}</span>
@@ -212,7 +248,12 @@ export function AdminLayout() {
                 <div className="grid gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nom complet</Label>
-                    <Input id="name" defaultValue="Utilisateur Admin" />
+                    <Input
+                      id="name"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Votre nom complet"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -224,50 +265,82 @@ export function AdminLayout() {
               <Separator className="my-4" />
 
               {/* Theme Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Sun className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">Apparence</h3>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Sun className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Apparence</h3>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {themeOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setTheme(option.value)}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                          theme === option.value
+                            ? "border-primary bg-primary/10 shadow-sm"
+                            : "border-border hover:border-primary/50 hover:bg-muted/50"
+                        )}
+                      >
+                        <option.icon className={cn(
+                          "h-6 w-6",
+                          theme === option.value ? "text-primary" : "text-muted-foreground"
+                        )} />
+                        <span className={cn(
+                          "text-sm font-medium",
+                          theme === option.value ? "text-primary" : "text-muted-foreground"
+                        )}>
+                          {option.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-3 gap-3">
-                  {themeOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setTheme(option.value)}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors",
-                        theme === option.value
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50 hover:bg-muted/50"
-                      )}
-                    >
-                      <option.icon className={cn(
-                        "h-6 w-6",
-                        theme === option.value ? "text-primary" : "text-muted-foreground"
-                      )} />
-                      <span className={cn(
-                        "text-sm font-medium",
-                        theme === option.value ? "text-primary" : "text-muted-foreground"
-                      )}>
-                        {option.label}
-                      </span>
-                    </button>
-                  ))}
+
+                {/* Color Theme Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Palette className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Couleur du thème</h3>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    {colorOptions.map((color) => (
+                      <button
+                        key={color.value}
+                        onClick={() => handleColorChange(color.value)}
+                        className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm hover:scale-110",
+                          color.class,
+                          selectedColor === color.value ? "ring-2 ring-offset-2 ring-primary scale-110" : ""
+                        )}
+                        title={color.label}
+                      >
+                        {selectedColor === color.value && (
+                          <Check className="h-5 w-5 text-white drop-shadow-md" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-4">
+              <div className="flex justify-end gap-3 mt-4 pt-2">
                 <Button variant="outline" onClick={() => setSettingsOpen(false)}>
                   Annuler
                 </Button>
-                <Button onClick={() => setSettingsOpen(false)}>
+                <Button onClick={() => {
+                  toast.success("Paramètres enregistrés avec succès");
+                  setSettingsOpen(false);
+                }}>
                   Enregistrer
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
-          <Tooltip delayDuration={0}>
+          <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
               <button
                 onClick={handleLogout}
@@ -291,7 +364,7 @@ export function AdminLayout() {
         {/* Collapse Toggle */}
         <button
           onClick={() => handleCollapse(!collapsed)}
-          className="absolute -right-4 top-20 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center z-50"
+          className="absolute -right-4 top-20 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center z-50 hover-lift"
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -311,7 +384,7 @@ export function AdminLayout() {
         {/* Header */}
         <header className="h-16 bg-card/95 backdrop-blur-sm border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold">{user?.username || 'Admin'}</h1>
+            <h1 className="text-xl font-bold">{displayName}</h1>
           </div>
 
           <div className="flex items-center gap-4">
@@ -323,14 +396,14 @@ export function AdminLayout() {
             <div className="h-8 w-px bg-border" />
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Avatar className="h-9 w-9 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
+                <Avatar className="h-9 w-9 ring-2 ring-primary/20 ring-offset-2 ring-offset-background cursor-pointer hover:ring-primary/50 transition-all" onClick={() => setSettingsOpen(true)}>
                   <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" />
-                  <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || 'AD'}</AvatarFallback>
+                  <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
               </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium">{user?.username || 'Admin'}</p>
+              <div className="hidden sm:block cursor-pointer" onClick={() => setSettingsOpen(true)}>
+                <p className="text-sm font-medium hover:text-primary transition-colors">{displayName}</p>
                 <p className="text-xs text-muted-foreground">{user?.is_staff ? 'Administrateur' : 'Utilisateur'}</p>
               </div>
             </div>
