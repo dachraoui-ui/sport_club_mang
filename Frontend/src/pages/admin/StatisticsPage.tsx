@@ -13,7 +13,7 @@ import {
   Legend,
 } from "recharts";
 import { statsAPI, membersAPI, activitiesAPI, enrollmentsAPI, ActivityStats } from "@/lib/api";
-import { Users, DollarSign, Activity, TrendingUp, Loader2 } from "lucide-react";
+import { Users, DollarSign, Activity, TrendingUp, Loader2, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -131,12 +131,20 @@ const StatisticsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Statistiques & Analytiques</h1>
-        <p className="text-muted-foreground mt-1">
-          Insights complets sur les performances de votre club
-        </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-cyan-600 via-teal-500 to-sky-600 rounded-3xl p-8 text-white animate-fade-in shadow-xl">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+              <BarChart3 className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold mb-1">Statistiques</h1>
+              <p className="text-cyan-100">Analysez les performances de votre club</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* KPI Cards */}

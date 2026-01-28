@@ -61,21 +61,30 @@ const RegistrationsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Inscriptions</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez les inscriptions aux activités ({enrollments.length} inscriptions)
-          </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-500 to-fuchsia-600 rounded-3xl p-8 text-white animate-fade-in shadow-xl">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+                <ClipboardList className="h-8 w-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-1">Gestion des Inscriptions</h1>
+                <p className="text-purple-100">Gérez les inscriptions aux activités</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate("/dashboard/registrations/add")}
+              size="lg"
+              className="bg-white text-purple-600 hover:bg-purple-50 shadow-lg"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Nouvelle Inscription
+            </Button>
+          </div>
         </div>
-        <Button 
-          onClick={() => navigate("/dashboard/registrations/add")}
-          className="gradient-primary shadow-glow-sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle Inscription
-        </Button>
       </div>
 
       {/* Search */}

@@ -67,21 +67,30 @@ const ActivitiesPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Activités</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez les activités de votre club ({activities.length} activités)
-          </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-rose-600 via-pink-500 to-fuchsia-600 rounded-3xl p-8 text-white animate-fade-in shadow-xl">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+                <Calendar className="h-8 w-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-1">Gestion des Activités</h1>
+                <p className="text-rose-100">Gérez les activités de votre club</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate("/dashboard/activities/add")}
+              size="lg"
+              className="bg-white text-rose-600 hover:bg-rose-50 shadow-lg"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Nouvelle Activité
+            </Button>
+          </div>
         </div>
-        <Button 
-          onClick={() => navigate("/dashboard/activities/add")}
-          className="gradient-primary shadow-glow-sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter une Activité
-        </Button>
       </div>
 
       {/* Filters */}

@@ -9,6 +9,7 @@ A comprehensive Django REST API for managing a sports club. This system handles 
 - [Project Structure](#-project-structure)
 - [Data Models](#-data-models)
 - [Installation & Setup](#-installation--setup)
+- [Getting Started](#-getting-started)
 - [Authentication](#-authentication)
 - [API Endpoints](#-api-endpoints)
   - [Members Management](#1-members-management)
@@ -133,30 +134,136 @@ class Enrollment(models.Model):
 python -m venv venv
 venv\Scripts\activate  # Windows
 
-# Install dependencies
-pip install django pillow
+# Install all required dependencies
+pip install django pillow django-cors-headers djangorestframework djangorestframework-simplejwt
 ```
 
-### 2. Database Setup
+### 2. Project Configuration
+
+Ensure your `settings.py` includes the following configuration:
+
+```python
+# myproject/settings.py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'corsheaders',          # CORS handling
+    'rest_framework',       # Django REST Framework
+    'club',                 # Your main app
+]
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# CORS Configuration for frontend integration
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",    # React default port
+    "http://127.0.0.1:3000",
+    "http://localhost:8080",    # Vue.js default port
+    "http://127.0.0.1:8080",
+]
+
+# Allow credentials for session-based auth
+CORS_ALLOW_CREDENTIALS = True
+
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+```
+
+### 3. Database Setup
 
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-### 3. Create Admin User
+### 4. Create Admin User
 
 ```bash
 python manage.py createsuperuser
 ```
 
-### 4. Run Server
+### 5. Run Server
 
 ```bash
 python manage.py runserver
 ```
 
 The API will be available at `http://127.0.0.1:8000/api/`
+
+### 6. Quick Fix for Missing Dependencies
+
+If you encounter `ModuleNotFoundError` for any package, install it:
+
+```bash
+# For CORS headers
+pip install django-cors-headers
+
+# For image handling
+pip install pillow
+
+# For REST API features
+pip install djangorestframework
+
+# For JWT authentication (if used)
+pip install djangorestframework-simplejwt
+
+# Install all at once
+pip install django pillow django-cors-headers djangorestframework djangorestframework-simplejwt
+```
+
+---
+
+## 🚀 Getting Started
+
+### Server is Running Successfully! ✅
+
+When you see this output, your Django server is working correctly:
+
+```
+System check identified no issues (0 silenced).
+Django version 6.0.1, using settings 'myproject.settings'
+Starting development server at http://127.0.0.1:8000/
+```
+
+### Available URLs
+
+Your API is accessible at these URLs:
+
+| URL | Description |
+|-----|-------------|
+| `http://127.0.0.1:8000/admin/` | **Django Admin Panel** (login with superuser) |
+| `http://127.0.0.1:8000/auth/login/` | **API Login** endpoint |
+| `http://127.0.0.1:8000/members/` | **Members** API endpoints |
+| `http://127.0.0.1:8000/activities/` | **Activities** API endpoints |
+| `http://127.0.0.1:8000/enrollments/` | **Enrollments** API endpoints |
+| `http://127.0.0.1:8000/stats/` | **Statistics** API endpoints |
+
+### Quick Test
+
+1. **Access Admin Panel**: Go to `http://127.0.0.1:8000/admin/` and login with your superuser credentials
+2. **Test API Login**: 
+   ```bash
+   curl -X POST http://127.0.0.1:8000/auth/login/ \
+     -d "username=youradmin&password=yourpassword"
+   ```
+
+### Note About Root URL (/)
+
+The 404 error at `http://127.0.0.1:8000/` is **normal** - there's no homepage configured. Use the specific API endpoints listed above.
 
 ---
 
@@ -651,6 +758,22 @@ def members_per_activity():
 
 ## 📝 Usage Examples
 
+### Prerequisites
+
+Before making API calls, ensure you have:
+
+1. **Installed all dependencies:**
+   ```bash
+   pip install django pillow django-cors-headers djangorestframework djangorestframework-simplejwt
+   ```
+
+2. **Configured CORS** in your `settings.py` (see Installation section)
+
+3. **Created an admin user:**
+   ```bash
+   python manage.py createsuperuser
+   ```
+
 ### Using cURL
 
 ```bash
@@ -709,6 +832,66 @@ const enrollment = await fetch('/api/enrollments/', {
     body: JSON.stringify({membre_id: 1, activite_id: 2}),
     credentials: 'include'
 }).then(r => r.json());
+```
+
+---
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+| Error/Issue | Solution |
+|-------------|----------|
+| `ModuleNotFoundError: No module named 'corsheaders'` | `pip install django-cors-headers` |
+| `ModuleNotFoundError: No module named 'PIL'` | `pip install pillow` |
+| `ModuleNotFoundError: No module named 'rest_framework'` | `pip install djangorestframework` |
+| `ModuleNotFoundError: No module named 'rest_framework_simplejwt'` | `pip install djangorestframework-simplejwt` |
+| **404 error at `http://127.0.0.1:8000/`** | **This is normal!** Use specific endpoints like `/admin/` or `/members/` |
+| CORS errors in browser | Add your frontend URL to `CORS_ALLOWED_ORIGINS` |
+| 403 Forbidden on API calls | Ensure you're logged in as staff user |
+| Can't access admin panel | Create superuser: `python manage.py createsuperuser` |
+
+### Server Status Messages
+
+| Message | Meaning |
+|---------|---------|
+| `Starting development server at http://127.0.0.1:8000/` | ✅ **Success!** Server is running |
+| `System check identified no issues` | ✅ **Good!** No configuration problems |
+| `Not Found: /` | ℹ️ **Normal** - Root URL doesn't exist, use API endpoints |
+
+### Complete Dependencies List
+
+Create a `requirements.txt` file in your project root:
+
+```txt
+Django>=4.2.0
+Pillow>=9.0.0
+django-cors-headers>=4.0.0
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.2.0
+```
+
+Install with: `pip install -r requirements.txt`
+
+### Alternative: Remove JWT if Not Needed
+
+If your project doesn't actually use JWT authentication (since you're using session-based auth), you can:
+
+1. **Check your `settings.py`** - look for `rest_framework_simplejwt` in `INSTALLED_APPS`
+2. **Remove JWT references** if not needed:
+   ```python
+   # In settings.py, remove these if present:
+   # 'rest_framework_simplejwt',
+   # 'rest_framework_simplejwt.token_blacklist',
+   ```
+3. **Check `urls.py`** for JWT token endpoints and remove if not used
+
+### Quick Fix Command
+
+Run this single command to install all dependencies:
+
+```bash
+pip install django pillow django-cors-headers djangorestframework djangorestframework-simplejwt
 ```
 
 ---

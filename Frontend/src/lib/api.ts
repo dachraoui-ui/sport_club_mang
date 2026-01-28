@@ -37,6 +37,9 @@ export interface Member {
   prenom: string;
   age: number;
   telephone: string;
+  email?: string;
+  actif?: boolean;
+  date_inscription?: string;
 }
 
 export interface Activity {
@@ -95,9 +98,20 @@ async function apiRequest<T>(
     (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
   }
 
+  console.log('API Request:', {
+    url: `${API_BASE_URL}${endpoint}`,
+    method: options.method || 'GET',
+    hasToken: !!accessToken
+  });
+
   let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+  });
+
+  console.log('API Response:', {
+    status: response.status,
+    ok: response.ok
   });
 
   // If token expired, try to refresh
@@ -118,7 +132,8 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || 'Request failed');
+    console.error('API Error:', error);
+    throw new Error(error.error || error.detail || `Request failed with status ${response.status}`);
   }
 
   return response.json();
@@ -347,4 +362,90 @@ export const statsAPI = {
   
   getMembersPerActivity: () => 
     apiRequest<Record<string, { nom: string; prenom: string }[]>>('/stats/members-per-activity/'),
+};
+
+// Subscriptions API
+export interface Subscription {
+  id: number;
+  membre_id: number;
+  membre_nom: string;
+  type_abonnement: 'MONTHLY' | '3_MONTHS' | '6_MONTHS' | 'ANNUAL';
+  type_abonnement_display: string;
+  date_debut: string;
+  date_fin: string;
+  actif: boolean;
+}
+
+export const subscriptionsAPI = {
+  getAll: (params?: { member_id?: number; actif?: boolean }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.member_id) searchParams.set('member_id', String(params.member_id));
+    if (params?.actif !== undefined) searchParams.set('actif', String(params.actif));
+    
+    const query = searchParams.toString();
+    return apiRequest<Subscription[]>(`/subscriptions/${query ? `?${query}` : ''}`);
+  },
+  
+  getById: (id: number) => apiRequest<Subscription>(`/subscriptions/${id}/`),
+  
+  create: (data: { membre_id: number; type_abonnement: string; date_debut: string; actif?: boolean }) =>
+    apiRequest<{ id: number; date_fin: string }>('/subscriptions/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  
+  update: (id: number, data: { type_abonnement?: string; date_debut?: string; actif?: boolean }) =>
+    apiRequest<{ success: boolean; date_fin: string }>(`/subscriptions/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  
+  delete: (id: number) =>
+    apiRequest<{ success: boolean }>(`/subscriptions/${id}/`, {
+      method: 'DELETE',
+    }),
+};
+
+// Class Sessions API
+export interface ClassSession {
+  id: number;
+  activite: {
+    id: number;
+    nom_act: string;
+    code_act: string;
+  };
+  date: string;
+  heure_debut: string;
+  heure_fin: string;
+}
+
+export const classSessionsAPI = {
+  getAll: (params?: { activite_id?: number; date?: string; sort?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.activite_id) searchParams.set('activite_id', String(params.activite_id));
+    if (params?.date) searchParams.set('date', params.date);
+    if (params?.sort) searchParams.set('sort', params.sort);
+    
+    const query = searchParams.toString();
+    return apiRequest<ClassSession[]>(`/class-sessions/${query ? `?${query}` : ''}`);
+  },
+  
+  getById: (id: number) => apiRequest<ClassSession>(`/class-sessions/${id}/`),
+  
+  create: (data: { activite_id: string; date: string; heure_debut: string; heure_fin: string }) =>
+    apiRequest<{ id: number; success: boolean }>('/class-sessions/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  
+  update: (id: number, data: { activite_id?: string; date?: string; heure_debut?: string; heure_fin?: string }) =>
+    apiRequest<{ success: boolean }>(`/class-sessions/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  
+  delete: (id: number) =>
+    apiRequest<{ success: boolean }>(`/class-sessions/${id}/`, {
+      method: 'DELETE',
+    }),
 };

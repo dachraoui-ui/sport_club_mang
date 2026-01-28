@@ -110,6 +110,19 @@ const EditActivityPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/dashboard/activities")}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Modifier l'Activité</h1>
+          <p className="text-muted-foreground">Mettez à jour les informations de l'activité</p>
+        </div>
+      </div>
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button

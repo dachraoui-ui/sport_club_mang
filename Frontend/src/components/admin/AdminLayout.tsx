@@ -3,9 +3,10 @@ import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Calendar,
-  ClipboardList,
-  BarChart3,
+  Activity,
+  UserPlus,
+  CalendarClock,
+  TrendingUp,
   Dumbbell,
   ChevronLeft,
   ChevronRight,
@@ -45,9 +46,10 @@ import { toast } from "sonner";
 const navItems = [
   { icon: LayoutDashboard, label: "Tableau de Bord", path: "/dashboard" },
   { icon: Users, label: "Membres", path: "/dashboard/members" },
-  { icon: Calendar, label: "Activités", path: "/dashboard/activities" },
-  { icon: ClipboardList, label: "Inscriptions", path: "/dashboard/registrations" },
-  { icon: BarChart3, label: "Statistiques", path: "/dashboard/statistics" },
+  { icon: Activity, label: "Activités", path: "/dashboard/activities" },
+  { icon: UserPlus, label: "Inscriptions", path: "/dashboard/registrations" },
+  { icon: CalendarClock, label: "Emploi du Temps", path: "/dashboard/schedule" },
+  { icon: TrendingUp, label: "Statistiques", path: "/dashboard/statistics" },
 ];
 
 export function AdminLayout() {
@@ -106,7 +108,7 @@ export function AdminLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 py-6 px-3 space-y-3 overflow-y-auto overflow-x-hidden">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const linkContent = (
@@ -309,22 +311,7 @@ export function AdminLayout() {
         {/* Header */}
         <header className="h-16 bg-card/95 backdrop-blur-sm border-b border-border flex items-center justify-between px-6 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-xl animate-pulse" />
-              <div className="relative flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 border border-primary/20">
-                <span className="text-2xl animate-bounce">👋</span>
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Bienvenue,</span>
-                  <span className="font-semibold bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
-                    {user?.username || 'Admin'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Système opérationnel</span>
-            </div>
+            <h1 className="text-xl font-bold">{user?.username || 'Admin'}</h1>
           </div>
 
           <div className="flex items-center gap-4">
