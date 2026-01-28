@@ -40,13 +40,12 @@ const AddActivityPage = () => {
           variant="ghost"
           size="icon"
           onClick={() => navigate("/dashboard/activities")}
-          className="rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Ajouter une Activité</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold">Ajouter une Activité</h1>
+          <p className="text-muted-foreground">
             Créez une nouvelle activité pour votre club
           </p>
         </div>

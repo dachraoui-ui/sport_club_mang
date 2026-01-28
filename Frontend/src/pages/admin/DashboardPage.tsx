@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Calendar, ClipboardList, TrendingUp, Loader2 } from "lucide-react";
+import { Users, Calendar, ClipboardList, TrendingUp, Loader2, LayoutDashboard } from "lucide-react";
 import { statsAPI, membersAPI, activitiesAPI, enrollmentsAPI, ActivityStats } from "@/lib/api";
 import { toast } from "sonner";
 import {
@@ -90,12 +90,20 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Tableau de Bord</h1>
-        <p className="text-muted-foreground mt-1">
-          Bienvenue ! Voici ce qui se passe dans votre club aujourd'hui.
-        </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-3xl p-8 text-white animate-fade-in shadow-xl">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+              <LayoutDashboard className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold mb-1">Tableau de Bord</h1>
+              <p className="text-blue-100">Vue d'ensemble de votre club sportif</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}

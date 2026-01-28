@@ -61,21 +61,30 @@ const MembersPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Membres</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez les membres de votre club ({members.length} membres)
-          </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-500 to-teal-600 rounded-3xl p-8 text-white animate-fade-in shadow-xl">
+        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+                <Users className="h-8 w-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-1">Gestion des Membres</h1>
+                <p className="text-emerald-100">Gérez les membres de votre club</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate("/dashboard/members/add")}
+              size="lg"
+              className="bg-white text-emerald-600 hover:bg-emerald-50 shadow-lg"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Nouveau Membre
+            </Button>
+          </div>
         </div>
-        <Button 
-          onClick={() => navigate("/dashboard/members/add")}
-          className="gradient-primary shadow-glow-sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter un Membre
-        </Button>
       </div>
 
       {/* Search */}
@@ -119,7 +128,9 @@ const MembersPage = () => {
               <TableRow className="hover:bg-transparent">
                 <TableHead>Membre</TableHead>
                 <TableHead>Âge</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
+                <TableHead>Actif</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -142,7 +153,13 @@ const MembersPage = () => {
                   <TableCell>
                     <Badge variant="outline">{member.age} ans</Badge>
                   </TableCell>
+                  <TableCell className="text-muted-foreground">{member.email || "Non renseigné"}</TableCell>
                   <TableCell className="text-muted-foreground">{member.telephone}</TableCell>
+                  <TableCell>
+                    <Badge variant={member.actif ? "default" : "secondary"}>
+                      {member.actif ? "Actif" : "Inactif"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button

@@ -4,6 +4,8 @@ from club.api.auth import admin_login, admin_logout, get_current_user
 from club.api.members import members, member_detail
 from club.api.activities import activities, activity_detail
 from club.api.enrollments import enrollments, enrollment_detail
+from club.api.subscriptions import subscriptions, subscription_detail
+from club.api.class_sessions import class_sessions, class_session_detail
 from club.api.statistics import stats_overview, stats_activities, stats_members_per_activity
 
 urlpatterns = [
@@ -24,6 +26,12 @@ urlpatterns = [
 
     path("enrollments/", enrollments),
     path("enrollments/<int:enrollment_id>/", enrollment_detail),
+
+    path("subscriptions/", subscriptions),
+    path("subscriptions/<int:subscription_id>/", subscription_detail),
+
+    path("class-sessions/", class_sessions),
+    path("class-sessions/<int:session_id>/", class_session_detail),
 
     # Statistics endpoints
     path("stats/", stats_overview),

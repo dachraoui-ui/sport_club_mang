@@ -1,10 +1,25 @@
 // Backend-aligned types
+export interface Subscription {
+  id: number;
+  membre_id: number;
+  membre_nom: string;
+  type_abonnement: 'MONTHLY' | '3_MONTHS' | '6_MONTHS' | 'ANNUAL';
+  type_abonnement_display: string;
+  date_debut: string;
+  date_fin: string;
+  actif: boolean;
+}
+
 export interface Member {
   id: number;
   nom: string;
   prenom: string;
   age: number;
   telephone: string;
+  email?: string;
+  actif?: boolean;
+  date_inscription?: string;
+  subscription?: Subscription;
 }
 
 export interface Activity {

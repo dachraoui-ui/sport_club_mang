@@ -18,6 +18,7 @@ import EditActivityPage from "./pages/admin/EditActivityPage";
 import RegistrationsPage from "./pages/admin/RegistrationsPage";
 import AddEnrollmentPage from "./pages/admin/AddEnrollmentPage";
 import StatisticsPage from "./pages/admin/StatisticsPage";
+import SchedulePage from "./pages/admin/SchedulePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ function AnimatedRoutes() {
         <Route path="activities/edit/:id" element={<EditActivityPage />} />
         <Route path="registrations" element={<RegistrationsPage />} />
         <Route path="registrations/add" element={<AddEnrollmentPage />} />
+        <Route path="schedule" element={<SchedulePage />} />
         <Route path="statistics" element={<StatisticsPage />} />
       </Route>
       <Route path="*" element={<NotFound />} />

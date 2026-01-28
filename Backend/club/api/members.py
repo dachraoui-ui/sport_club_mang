@@ -106,7 +106,9 @@ def members(request):
             nom=data["nom"],
             prenom=data["prenom"],
             age=data["age"],
-            telephone=data["telephone"]
+            telephone=data["telephone"],
+            email=data.get("email"),
+            actif=data.get("actif", True)
         )
         return JsonResponse({"id": member.id, "success": True})
 
@@ -166,7 +168,10 @@ def member_detail(request, member_id):
             "nom": member.nom,
             "prenom": member.prenom,
             "age": member.age,
-            "telephone": member.telephone
+            "telephone": member.telephone,
+            "email": member.email,
+            "actif": member.actif,
+            "date_inscription": member.date_inscription.isoformat() if member.date_inscription else None
         })
 
     if request.method == "PUT":
