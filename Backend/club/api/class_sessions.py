@@ -8,11 +8,11 @@ from club.models import ClassSession, Activity
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([]) # Allow public access by default, checks inside
 def class_sessions(request):
     """
-    GET: List all class sessions with optional filters
-    POST: Create a new class session
+    GET: List all class sessions (Public)
+    POST: Create a new class session (Authenticated only)
     """
     if request.method == "GET":
         sessions = ClassSession.objects.select_related('activite').all()
@@ -49,6 +49,9 @@ def class_sessions(request):
         return JsonResponse(data, safe=False)
     
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
@@ -78,12 +81,12 @@ def class_sessions(request):
 
 @csrf_exempt
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([]) # Allow public access by default, checks inside
 def class_session_detail(request, session_id):
     """
-    GET: Retrieve a single class session
-    PUT: Update a class session
-    DELETE: Delete a class session
+    GET: Retrieve a single class session (Public)
+    PUT: Update a class session (Authenticated only)
+    DELETE: Delete a class session (Authenticated only)
     """
     try:
         session = ClassSession.objects.select_related('activite').get(id=session_id)
@@ -104,6 +107,9 @@ def class_session_detail(request, session_id):
         })
     
     if request.method == "PUT":
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
@@ -131,5 +137,8 @@ def class_session_detail(request, session_id):
         return JsonResponse({"success": True})
     
     if request.method == "DELETE":
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+
         session.delete()
         return JsonResponse({"success": True})

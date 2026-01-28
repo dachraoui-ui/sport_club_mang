@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Menu, X, ArrowRight } from "lucide-react";
+import { Dumbbell, Menu, X, ArrowRight, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -105,10 +105,10 @@ export function Navbar() {
                 Connexion
               </Button>
             </Link>
-            <Link to="/login">
+            <Link to="/calendar">
               <Button className="gradient-vibrant hover:opacity-90 transition-all duration-300 shadow-glow-sm hover:shadow-glow group">
-                Commencer
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                Voir Calendrier
+                <CalendarDays className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
@@ -170,10 +170,10 @@ export function Navbar() {
               ))}
             </div>
             <div className="h-px bg-border/50 my-3" />
-            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+            <Link to="/calendar" onClick={() => setIsMobileMenuOpen(false)}>
               <Button className="w-full gradient-vibrant shadow-glow-sm group">
-                Commencer
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                Voir Calendrier
+                <CalendarDays className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>

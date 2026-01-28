@@ -11,7 +11,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExampl
 @csrf_exempt
 @extend_schema(
     summary="List or Create Activities",
-    description="GET: Retrieve all activities with optional search and sort. POST: Create a new activity (supports JSON or form-data with file upload).",
+    description="GET: Retrieve all activities (Public). POST: Create a new activity (Admin only).",
     parameters=[
         OpenApiParameter(
             name='search',
@@ -40,36 +40,15 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExampl
         }
     },
     responses={
-        200: OpenApiResponse(
-            description="List of activities or newly created activity",
-            examples=[
-                OpenApiExample(
-                    'List Response',
-                    value=[
-                        {
-                            "id": 1,
-                            "code_act": "ACT001",
-                            "nom_act": "Yoga",
-                            "tarif_mensuel": 50.0,
-                            "capacite": 20,
-                            "photo": "/media/activities/yoga.jpg"
-                        }
-                    ]
-                ),
-                OpenApiExample(
-                    'Create Response',
-                    value={"id": 1, "success": True}
-                )
-            ]
-        ),
-        400: OpenApiResponse(description="Invalid JSON data"),
+        200: OpenApiResponse(description="Success"),
+        400: OpenApiResponse(description="Invalid data"),
         401: OpenApiResponse(description="Unauthorized"),
-        403: OpenApiResponse(description="Forbidden - Admin required")
+        403: OpenApiResponse(description="Forbidden")
     },
     tags=['Activities']
 )
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated, IsAdminUser])
+@permission_classes([]) # Allow public to LIST
 def activities(request):
     if request.method == "GET":
         search = request.GET.get("search")
@@ -101,6 +80,9 @@ def activities(request):
         return JsonResponse(activities_list, safe=False)
 
     if request.method == "POST":
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return JsonResponse({"error": "Admin privileges required"}, status=403)
+
         # Handle both JSON and form data (for file uploads)
         if request.content_type and 'application/json' in request.content_type:
             try:
@@ -141,48 +123,12 @@ def activities(request):
 @csrf_exempt
 @extend_schema(
     summary="Get, Update, or Delete Activity",
-    description="GET: Retrieve activity details. PUT: Update activity information (supports JSON or form-data with file upload). DELETE: Remove activity.",
-    request={
-        'application/json': {
-            'type': 'object',
-            'properties': {
-                'code_act': {'type': 'string', 'example': 'ACT001'},
-                'nom_act': {'type': 'string', 'example': 'Yoga Advanced'},
-                'tarif_mensuel': {'type': 'number', 'format': 'float', 'example': 60.0},
-                'capacite': {'type': 'integer', 'example': 25},
-            }
-        }
-    },
-    responses={
-        200: OpenApiResponse(
-            description="Activity details or success confirmation",
-            examples=[
-                OpenApiExample(
-                    'Get Response',
-                    value={
-                        "id": 1,
-                        "code_act": "ACT001",
-                        "nom_act": "Yoga",
-                        "tarif_mensuel": 50.0,
-                        "capacite": 20,
-                        "photo": "/media/activities/yoga.jpg"
-                    }
-                ),
-                OpenApiExample(
-                    'Update/Delete Response',
-                    value={"success": True}
-                )
-            ]
-        ),
-        404: OpenApiResponse(description="Activity not found"),
-        400: OpenApiResponse(description="Invalid JSON data"),
-        401: OpenApiResponse(description="Unauthorized"),
-        403: OpenApiResponse(description="Forbidden - Admin required")
-    },
+    description="GET: Retrieve activity details (Public). PUT/DELETE: Admin only.",
+    responses={200: OpenApiResponse(description="Success")},
     tags=['Activities']
 )
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated, IsAdminUser])
+@permission_classes([]) # Public GET, restricted others
 def activity_detail(request, activity_id):
     try:
         activity = Activity.objects.get(id=activity_id)
@@ -200,6 +146,9 @@ def activity_detail(request, activity_id):
         })
 
     if request.method == "PUT":
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return JsonResponse({"error": "Admin privileges required"}, status=403)
+
         # Handle both JSON and form data
         if request.content_type and 'application/json' in request.content_type:
             try:
@@ -226,5 +175,8 @@ def activity_detail(request, activity_id):
             return JsonResponse({"success": True})
 
     if request.method == "DELETE":
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return JsonResponse({"error": "Admin privileges required"}, status=403)
+
         activity.delete()
         return JsonResponse({"success": True})

@@ -7,6 +7,7 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import PublicCalendarPage from "./pages/PublicCalendarPage";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import DashboardPage from "./pages/admin/DashboardPage";
 import MembersPage from "./pages/admin/MembersPage";
@@ -26,7 +27,7 @@ const queryClient = new QueryClient();
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -34,11 +35,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -48,6 +49,7 @@ function AnimatedRoutes() {
   return (
     <Routes location={location}>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/calendar" element={<PublicCalendarPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/dashboard"
