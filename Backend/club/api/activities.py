@@ -4,9 +4,69 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from club.models import Activity
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
 
 
 @csrf_exempt
+@extend_schema(
+    summary="List or Create Activities",
+    description="GET: Retrieve all activities with optional search and sort. POST: Create a new activity (supports JSON or form-data with file upload).",
+    parameters=[
+        OpenApiParameter(
+            name='search',
+            description='Search activities by name (nom_act)',
+            required=False,
+            type=str
+        ),
+        OpenApiParameter(
+            name='sort',
+            description='Sort activities by capacity ("capacite" for ascending, "-capacite" for descending)',
+            required=False,
+            type=str,
+            enum=['capacite', '-capacite']
+        ),
+    ],
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'code_act': {'type': 'string', 'example': 'ACT001'},
+                'nom_act': {'type': 'string', 'example': 'Yoga'},
+                'tarif_mensuel': {'type': 'number', 'format': 'float', 'example': 50.0},
+                'capacite': {'type': 'integer', 'example': 20},
+            },
+            'required': ['code_act', 'nom_act', 'tarif_mensuel', 'capacite']
+        }
+    },
+    responses={
+        200: OpenApiResponse(
+            description="List of activities or newly created activity",
+            examples=[
+                OpenApiExample(
+                    'List Response',
+                    value=[
+                        {
+                            "id": 1,
+                            "code_act": "ACT001",
+                            "nom_act": "Yoga",
+                            "tarif_mensuel": 50.0,
+                            "capacite": 20,
+                            "photo": "/media/activities/yoga.jpg"
+                        }
+                    ]
+                ),
+                OpenApiExample(
+                    'Create Response',
+                    value={"id": 1, "success": True}
+                )
+            ]
+        ),
+        400: OpenApiResponse(description="Invalid JSON data"),
+        401: OpenApiResponse(description="Unauthorized"),
+        403: OpenApiResponse(description="Forbidden - Admin required")
+    },
+    tags=['Activities']
+)
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def activities(request):
@@ -55,6 +115,48 @@ def activities(request):
 
 
 @csrf_exempt
+@extend_schema(
+    summary="Get, Update, or Delete Activity",
+    description="GET: Retrieve activity details. PUT: Update activity information (supports JSON or form-data with file upload). DELETE: Remove activity.",
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'code_act': {'type': 'string', 'example': 'ACT001'},
+                'nom_act': {'type': 'string', 'example': 'Yoga Advanced'},
+                'tarif_mensuel': {'type': 'number', 'format': 'float', 'example': 60.0},
+                'capacite': {'type': 'integer', 'example': 25},
+            }
+        }
+    },
+    responses={
+        200: OpenApiResponse(
+            description="Activity details or success confirmation",
+            examples=[
+                OpenApiExample(
+                    'Get Response',
+                    value={
+                        "id": 1,
+                        "code_act": "ACT001",
+                        "nom_act": "Yoga",
+                        "tarif_mensuel": 50.0,
+                        "capacite": 20,
+                        "photo": "/media/activities/yoga.jpg"
+                    }
+                ),
+                OpenApiExample(
+                    'Update/Delete Response',
+                    value={"success": True}
+                )
+            ]
+        ),
+        404: OpenApiResponse(description="Activity not found"),
+        400: OpenApiResponse(description="Invalid JSON data"),
+        401: OpenApiResponse(description="Unauthorized"),
+        403: OpenApiResponse(description="Forbidden - Admin required")
+    },
+    tags=['Activities']
+)
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated, IsAdminUser])
 def activity_detail(request, activity_id):
