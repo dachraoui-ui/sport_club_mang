@@ -1,0 +1,38 @@
+services:
+  # Django Backend
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    container_name: sporthub-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount media folder for persistent uploads
+      - ../Backend/media:/app/media
+      # Mount database for persistence
+      - ../Backend/db.sqlite3:/app/db.sqlite3
+    environment:
+      - DEBUG=True
+      - ALLOWED_HOSTS=*
+    networks:
+      - sporthub-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+    container_name: sporthub-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://127.0.0.1:8000
+    networks:
+      - sporthub-network
+
+networks:
+  sporthub-network:
+    driver: bridge
