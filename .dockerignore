@@ -1,39 +1,20 @@
+# Dependencies
+**/node_modules
+**/venv
+**/env
+**/.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
 # Git
 .git
 .gitignore
 
-# Python
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.Python
-venv
-env
-.venv
+# Environment variables (secrets)
+.env
 
-# Node
-node_modules
-.npm
-
-# IDE
-.idea
+# IDEs
 .vscode
-*.swp
-*.swo
-
-# Build outputs
-dist
-build
-*.egg-info
-
-# Logs
-*.log
-npm-debug.log*
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docker
-docker/
+.idea

@@ -8,9 +8,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Mount media folder for persistent uploads
+      # Mount entire backend for hot reloading
+      - ../Backend:/app
+      # Explicitly mount media to ensure persistence even if code volume changes
       - ../Backend/media:/app/media
-      # Mount database for persistence
+      # Mount database
       - ../Backend/db.sqlite3:/app/db.sqlite3
     environment:
       - DEBUG=True
@@ -26,6 +28,11 @@ services:
     container_name: sporthub-frontend
     ports:
       - "5173:5173"
+    volumes:
+      # Mount source code for hot reloading
+      - ../Frontend:/app
+      # PROTECT container node_modules from being overwritten by local host directory
+      - /app/node_modules
     depends_on:
       - backend
     environment:

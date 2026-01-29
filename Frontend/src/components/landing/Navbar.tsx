@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dumbbell, Menu, X, ArrowRight, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -97,6 +98,7 @@ export function Navbar() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            <ModeToggle />
             <Link to="/login">
               <Button
                 variant="ghost"
@@ -143,6 +145,9 @@ export function Navbar() {
           isMobileMenuOpen ? "max-h-96 opacity-100 mt-4" : "max-h-0 opacity-0"
         )}>
           <div className="p-4 rounded-2xl glass border border-border/50">
+            <div className="flex justify-end mb-2">
+              <ModeToggle />
+            </div>
             <div className="flex flex-col gap-1">
               {navLinks.map((link, index) => (
                 <a
